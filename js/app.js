@@ -247,7 +247,7 @@ const CALCS=[
    return`<div class="res-kicker">납부할 인지액</div><div class="big num">${won(f)}</div><dl class="kv num"><dt>1심 기준 인지액</dt><dd>${won(Math.floor(b/100)*100)}</dd><dt>절차 배수</dt><dd>× ${m}</dd>${e?"<dt>전자소송 감액</dt><dd>× 0.9</dd>":""}<dt class="sum">인지액 (100원 미만 버림, 최저 1,000원)</dt><dd class="sum">${won(f)}</dd></dl><p class="small-note">항소·상고는 불복하는 범위의 금액을 소가로 넣으세요. 송달료는 별도입니다.</p>`}},
  {id:"fee",t:"소송비용 산입 변호사보수",basis:"변호사보수의 소송비용 산입에 관한 규칙 제3조 별표",
   form:`<label class="f">소송목적의 값 (소가)<div class="unit"><input type="number" id="f1" value="100000000"><span>원</span></div></label>
-  <label class="f">실제 지급한 보수 (선택, 이보다 많이 산입되지 않음)<div class="unit"><input type="number" id="f2" placeholder="예: 5500000"><span>원</span></div></label>`,
+  <label class="f">실제 지급한 보수 (선택, 이보다 많이 산입되지 않음)<div class="unit"><input type="number" id="f2" placeholder="예: 5,500,000"><span>원</span></div></label>`,
   run(){const x=v("f1"),paid=v("f2");const a=x>0?lawyerFee(x):0;const r=paid>0?Math.min(a,paid):a;
    return`<div class="res-kicker">한 심급에 산입되는 보수</div><div class="big num">${won(r)}</div><dl class="kv num"><dt>별표 기준액</dt><dd>${won(a)}</dd>${paid>0?`<dt>실제 지급액</dt><dd>${won(paid)}</dd>`:""}</dl><p class="small-note">심급마다 따로 계산합니다. 소가를 산정할 수 없는 사건, 가압류·가처분 등은 규칙의 별도 기준을 확인하세요.</p>`}},
  {id:"interest",t:"판결금 지연이자",basis:"민법 제379조(연 5%), 상법 제54조(연 6%), 소송촉진법 제3조(연 12%)",
@@ -317,7 +317,7 @@ const CALCS=[
   init(){const h=document.getElementById("heirs");const add=(n,s,g,c)=>{const w=document.createElement("div");w.className="rowline";w.style.gridTemplateColumns="minmax(0,1.1fr) minmax(0,.7fr) minmax(0,1.3fr) minmax(0,1.3fr) 42px";w.innerHTML=`<label class="f">이름<input type="text" class="hn" value="${n}"></label><label class="f">상속분<input type="text" class="hs" value="${s}"></label><label class="f">특별수익<input type="number" class="hg" value="${g}"></label><label class="f">기여분<input type="number" class="hc" value="${c}"></label><button type="button" class="x" aria-label="삭제">×</button>`;h.appendChild(w)};
    if(!h.children.length){add("배우자","3/7",0,50000000);add("장남","2/7",200000000,0);add("차녀","2/7",0,0)}
    document.getElementById("addHeir").onclick=()=>{add("상속인","0",0,0);runCalc()};h.onclick=e=>{if(e.target.classList.contains("x")&&h.children.length>1){e.target.parentElement.remove();runCalc()}}},
-  run(){const E=v("e0");const H=[...document.querySelectorAll("#heirs .rowline")].map(r=>({n:r.querySelector(".hn").value,s:fracParse(r.querySelector(".hs").value),g:+r.querySelector(".hg").value||0,c:+r.querySelector(".hc").value||0}));
+  run(){const E=v("e0");const H=[...document.querySelectorAll("#heirs .rowline")].map(r=>({n:r.querySelector(".hn").value,s:fracParse(r.querySelector(".hs").value),g:numOf(r.querySelector(".hg").value),c:numOf(r.querySelector(".hc").value)}));
    const G=H.reduce((a,x)=>a+x.g,0),C=H.reduce((a,x)=>a+x.c,0),deemed=E+G-C;
    H.forEach(x=>{x.raw=deemed*x.s-x.g+x.c});
    let over=H.filter(x=>x.raw<0),deficit=-over.reduce((a,x)=>a+x.raw,0);
@@ -331,9 +331,27 @@ const CALCS=[
 let calcId=LS.get("ld-calc","stamp");if(!CALCS.find(c=>c.id===calcId))calcId="stamp";
 function renderCalcList(){$("#calcList").innerHTML=CALCS.map(c=>c.grp?`<div class="grp">${c.grp}</div>`:`<button type="button" role="tab" aria-selected="${c.id===calcId}" data-calc="${c.id}">${c.t}</button>`).join("")}
 function renderCalc(){const c=CALCS.find(x=>x.id===calcId);$("#calcPane").innerHTML=`<h3>${c.t}</h3><div class="basis">${c.basis}</div><form id="cf" novalidate>${c.form}</form><div class="out" id="cout" aria-live="polite"></div>`;if(c.init)c.init();runCalc()}
-function runCalc(){const c=CALCS.find(x=>x.id===calcId);try{$("#cout").innerHTML=c.run()}catch(e){$("#cout").innerHTML=`<p class="small-note">입력값을 확인하세요.</p>`}}
+/* 금액 입력칸: 100,000,000처럼 세 자리마다 반점 */
+const numOf=x=>{const n=parseFloat(String(x||"").replace(/,/g,""));return isFinite(n)?n:0};
+const commas=d=>d.replace(/\B(?=(\d{3})+(?!\d))/g,",");
+function moneyify(root){root.querySelectorAll('.unit input, input.hg, input.hc').forEach(i=>{
+  if(i.classList.contains("money"))return;
+  const u=i.parentElement.querySelector("span");
+  if(i.closest(".unit")&&!(u&&/원$/.test(u.textContent)))return;
+  i.type="text";i.inputMode="numeric";i.autocomplete="off";i.classList.add("money");
+  i.value=commas(String(i.value).replace(/[^\d]/g,""));
+  if(i.placeholder&&/^\d+$/.test(i.placeholder))i.placeholder=commas(i.placeholder);
+})}
+function formatMoney(i){
+  const pos=i.selectionStart??i.value.length;const before=i.value.slice(0,pos).replace(/[^\d]/g,"").length;
+  const digits=i.value.replace(/[^\d]/g,"").replace(/^0+(?=\d)/,"");const out=commas(digits);
+  if(out===i.value)return;i.value=out;
+  let k=0,c=0;while(c<out.length&&k<before){if(/\d/.test(out[c]))k++;c++}
+  try{i.setSelectionRange(c,c)}catch(e){}
+}
+function runCalc(){moneyify($("#calcPane"));const c=CALCS.find(x=>x.id===calcId);try{$("#cout").innerHTML=c.run()}catch(e){$("#cout").innerHTML=`<p class="small-note">입력값을 확인하세요.</p>`}}
 $("#calcList").addEventListener("click",e=>{const b=e.target.closest("[data-calc]");if(!b)return;calcId=b.dataset.calc;LS.set("ld-calc",calcId);renderCalcList();renderCalc()});
-$("#calcPane").addEventListener("input",runCalc);
+$("#calcPane").addEventListener("input",e=>{if(e.target.classList.contains("money"))formatMoney(e.target);runCalc()});
 $("#calcPane").addEventListener("submit",e=>e.preventDefault());
 
 /* boot */

@@ -1,5 +1,5 @@
 // 오프라인에서도 열리도록 기본 파일을 캐시합니다. 파일을 고치면 VERSION 숫자를 올리세요.
-const VERSION = "v1";
+const VERSION = "v2";
 const FILES = ["./", "index.html", "css/style.css", "js/app.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k))))); self.clients.claim(); });
