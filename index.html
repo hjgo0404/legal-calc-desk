@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>법무 계산 데스크</title>
+<meta name="description" content="법정기간(항소·이의신청 등 33개 절차) 마감일, 인지대, 변호사보수, 지연이자, 급여압류, 양육비, 재산분할, 상속지분 계산기">
+<meta name="theme-color" content="#1f2a52">
+<meta property="og:type" content="website">
+<meta property="og:title" content="법무 계산 데스크">
+<meta property="og:description" content="기준일만 넣으면 마감일까지. 법정기간·소송비용·가사·상속 계산기">
+<meta property="og:image" content="icons/og.png">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#deadline">법무 계산 데스크<small>기한 · 비용 · 양형</small></a>
+    <nav class="nav" aria-label="섹션">
+      <a href="#deadline">법정기간</a>
+      <a href="#civil">민사·가사 계산</a>
+      <a href="#criminal">형사 양형</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap layout">
+<main class="main">
+
+  <!-- 1. 법정기간 -->
+  <section id="deadline" class="sec">
+    <div class="eyebrow">민사 · 형사 · 행정 · 가사 33개 절차</div>
+    <h1 class="h1">기준일만 넣으면 <em>마감일</em>까지 바로</h1>
+    <p class="lead">초일 불산입, 말일 휴일 연장, 항소이유서 1개월 연장, 전자송달 간주까지 반영합니다. 2025~2027년 공휴일(노동절·제헌절 포함)이 들어 있습니다.</p>
+
+    <div class="dl">
+      <div class="panel hero">
+        <div class="step-label"><b>1</b>무엇의 기한인가요?</div>
+        <div class="chips" id="catChips" role="group" aria-label="분야"></div>
+        <select id="procSel" class="proc-select" aria-label="절차"></select>
+        <div id="directBox" class="opt" hidden>
+          <div class="grid2">
+            <label class="f">기간<input type="number" id="dN" min="1" value="14"></label>
+            <label class="f">단위<select id="dU"><option value="d">일</option><option value="w">주</option><option value="m">개월</option><option value="y">년</option></select></label>
+          </div>
+          <label class="check"><input type="checkbox" id="dFirst">첫날도 셉니다 (오전 0시부터 시작하는 기간, 민법 제157조 단서)</label>
+          <label class="check"><input type="checkbox" id="dNoExt">말일이 휴일이어도 미루지 않습니다 (형사 시효·구속기간, 형소법 제66조 제3항 단서)</label>
+        </div>
+        <div id="procOpts"></div>
+
+        <div class="step-label" style="margin-top:22px"><b>2</b>언제부터 세나요?</div>
+        <label class="f"><span id="baseLabel">기준일</span><input type="date" id="baseDate"></label>
+        <div class="row-btns"><button class="btn ghost sm" type="button" data-q="0">오늘</button><button class="btn ghost sm" type="button" data-q="-1">어제</button></div>
+
+        <div class="cal" id="cal"></div>
+      </div>
+
+      <div class="panel" id="dlResult" aria-live="polite"></div>
+    </div>
+
+    <details class="tbl">
+      <summary>절차별 기간 한눈에 (행을 누르면 그 절차로 계산)</summary>
+      <div class="tscroll"><table><thead><tr><th>절차</th><th>기간</th><th>언제부터</th><th>근거</th></tr></thead><tbody id="procTable"></tbody></table></div>
+    </details>
+
+    <div class="steps" aria-label="기간 계산 원칙">
+      <div class="stepc"><span class="tag">원칙 1</span><h3>첫날은 세지 않음</h3><p>송달일·선고일 다음 날이 1일째. 오전 0시 시작 기간만 첫날 산입 (민법 제157조)</p></div>
+      <div class="stepc"><span class="tag">원칙 2</span><h3>말일 24시 종료</h3><p>마지막 날이 끝나야 기간이 끝납니다 (민법 제159조)</p></div>
+      <div class="stepc"><span class="tag">원칙 3</span><h3>주·월·년은 역법</h3><p>1개월은 다음 달 같은 날 전날까지, 해당일 없으면 그 달 말일 (민법 제160조)</p></div>
+      <div class="stepc"><span class="tag">원칙 4</span><h3>휴일이면 다음 날</h3><p>토·일·공휴일·대체공휴일이면 첫 평일까지 (민법 제161조, 형소법 제66조)</p></div>
+    </div>
+  </section>
+
+  <!-- 2. 민사·가사 -->
+  <section id="civil" class="sec">
+    <div class="sec-head">
+      <div><div class="eyebrow">소송비용 · 집행 · 가사 · 상속</div><h2 class="h2">민사·가사 계산기</h2>
+      <p class="lead">공개된 법령과 법원 기준표로 계산합니다. 예시 값이 들어 있으니 바꿔서 쓰세요. 항소기간·이유서 기한은 위의 법정기간 계산기로 합쳤습니다.</p></div>
+    </div>
+    <div class="calcs">
+      <div class="calc-list" id="calcList" role="tablist" aria-label="계산기 목록"></div>
+      <div class="calc-pane" id="calcPane"></div>
+    </div>
+  </section>
+
+  <!-- 3. 형사 -->
+  <section id="criminal" class="sec">
+    <div class="sec-head"><div><div class="eyebrow">대법원 양형기준 · 유사 판례</div><h2 class="h2">형사 양형 정보</h2>
+    <p class="lead">PreVerdict의 판례 형량 조회는 그 사이트 서버의 판례 데이터로 동작해서 이 페이지에 옮겨 올 수 없습니다. 자주 쓰는 화면으로 바로 가도록 묶었습니다.</p></div></div>
+
+    <div class="crim-banner">
+      <div><div style="font-size:13px;color:#9fb0e0;font-weight:700">PreVerdict</div>
+      <h3 style="font-size:22px;font-weight:800;margin-top:4px">비슷한 사건은 어떻게 끝났나요?</h3></div>
+      <p>사건 개요를 입력하면 양형기준과 유사 판례 통계로 형량 분포와 집행유예 가능성을 보여 줍니다.</p>
+      <div class="bt"><a class="btn" href="https://www.preverdict.net/predict" target="_blank" rel="noopener">유사 판례 형량 조회 ↗</a><a class="btn ghost" href="https://www.preverdict.net/guide" target="_blank" rel="noopener">죄명별 형량 가이드 ↗</a></div>
+    </div>
+
+    <div class="links">
+      <a class="lcard" href="https://www.preverdict.net/guide/stage" target="_blank" rel="noopener"><span class="src">PreVerdict</span><b>사건 단계별 가이드 ↗</b><span>고소·경찰 조사·검찰·재판·선고 후 단계별 체크</span></a>
+      <a class="lcard" href="https://www.preverdict.net/commentary" target="_blank" rel="noopener"><span class="src">PreVerdict</span><b>사건 총평 ↗</b><span>화제가 된 선고와 그 형이 나온 이유</span></a>
+      <a class="lcard" href="https://www.scourt.go.kr/sc/krsc/main.html" target="_blank" rel="noopener"><span class="src">양형위원회</span><b>양형기준 원문 ↗</b><span>범죄군별 권고 형량 범위와 감경·가중 요소</span></a>
+    </div>
+
+    <h3 class="sub-h">양형 자가진단 (열린법노트)</h3>
+    <div class="links">
+      <a class="lcard" href="https://lawforall.kr/%ec%9d%bc%eb%b0%98%ec%82%ac%ea%b8%b0%ec%a3%84-%ec%96%91%ed%98%95%ea%b8%b0%ec%a4%80/" target="_blank" rel="noopener"><b>일반 사기죄 ↗</b><span>피해액·합의 여부별 권고 형량</span></a>
+      <a class="lcard" href="https://lawforall.kr/%ec%9d%bc%eb%b0%98%ec%9e%ac%ec%82%b0-%ec%a0%88%eb%8f%84%ec%a3%84-%ec%96%91%ed%98%95%ea%b8%b0%ec%a4%80/" target="_blank" rel="noopener"><b>일반 절도죄 ↗</b><span>피해 회복·범행 동기별 형량</span></a>
+      <a class="lcard" href="https://lawforall.kr/%ed%98%91%eb%b0%95%ec%a3%84-%ec%96%91%ed%98%95%ea%b8%b0%ec%a4%80/" target="_blank" rel="noopener"><b>협박죄 ↗</b><span>단순협박부터 특수협박까지</span></a>
+      <a class="lcard" href="https://lawforall.kr/unlicensed-driving-sentencing-factors/" target="_blank" rel="noopener"><b>무면허운전 ↗</b><span>동종 전과 등 가중 요소 반영</span></a>
+      <a class="lcard" href="https://lawforall.kr/%ec%82%b0%ec%97%85%ec%95%88%ec%a0%84%eb%b3%b4%ea%b1%b4%eb%b2%95%ec%9c%84%eb%b0%98%ec%a3%84-%ec%96%91%ed%98%95%ea%b8%b0%ec%a4%80/" target="_blank" rel="noopener"><b>산업안전보건법위반 ↗</b><span>안전조치 미비 여부별 양형</span></a>
+      <a class="lcard" href="https://jsulaw.co.kr/sentencecalc/" target="_blank" rel="noopener"><b>형기·가석방·공소시효 ↗</b><span>출소일과 공소시효 계산 (법률사무소 信)</span></a>
+    </div>
+  </section>
+</main>
+
+<aside class="side" aria-label="내 기한">
+  <div class="side-inner">
+    <div>
+      <h2>내 기한</h2>
+      <p class="lead">계산한 마감일을 저장해 두는 곳입니다. 이 브라우저에만 남습니다.</p>
+    </div>
+    <div class="today-box"><div class="res-kicker">오늘</div><div class="d num" id="todayTxt"></div></div>
+    <div class="mine" id="mine"></div>
+    <div>
+      <div class="eyebrow">다가오는 공휴일</div>
+      <ul class="hol-list num" id="holList"></ul>
+    </div>
+    <div class="quick">
+      <a href="#deadline"><b>기한</b>법정기간</a>
+      <a href="#civil"><b>비용</b>인지·보수</a>
+      <a href="#criminal"><b>양형</b>판례</a>
+    </div>
+  </div>
+</aside>
+</div>
+
+<footer class="foot">
+  <div class="wrap">
+    <b>법무 계산 데스크</b>
+    <p>업무용 참고 도구입니다. 법적 효력이 없으며 실제 기산일, 휴일 적용, 금액은 사건 기록과 법원 안내로 확인하세요. 입력한 값은 이 기기 밖으로 나가지 않습니다.</p>
+    <p>기능 출처: <a href="https://jsulaw.co.kr/legaldeadlinecalc/" target="_blank" rel="noopener">법정기간 자동 계산기(법률사무소 信)</a> · <a href="https://lawforall.kr/legal-tools/" target="_blank" rel="noopener">무료 법률 계산기 모음(열린법노트)</a> · <a href="https://www.preverdict.net/" target="_blank" rel="noopener">PreVerdict</a></p>
+  </div>
+</footer>
+
+<script src="js/app.js"></script>
+<script>if("serviceWorker" in navigator&&location.protocol!=="file:"){navigator.serviceWorker.register("sw.js").catch(()=>{})}</script>
+</body>
+</html>
